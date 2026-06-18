@@ -56,8 +56,25 @@ clasp deploy --description "Human Stack AI"
 `clasp deployments`, or open the project (`clasp open`) → **Deploy → Manage deployments** to
 copy the URL and confirm access is **Anyone within Fulcrum Labs Inc**.
 
-To update later: re-sync `index.html` from the working copy, then `clasp push` and
-`clasp deploy`.
+### Updating after the first deploy — one command
+
+Use the included **`sync-and-deploy.sh`** (run from Git Bash). It copies your latest
+`Documents/humanstackai-prototype/index.html` into this repo, commits + pushes to GitHub,
+runs `clasp push`, and bumps the live web app:
+
+```bash
+./sync-and-deploy.sh "optional commit message"
+```
+
+To make it bump the **same** production `/exec` URL each time, save your deployment id once:
+
+```bash
+clasp deployments                 # copy the deployment id
+echo <DEPLOYMENT_ID> > .deploy-id # gitignored; the script reads it
+```
+
+Without `.deploy-id`, the script still syncs + `clasp push`es (the `/dev` test URL reflects
+it immediately); it just won't bump the production deployment.
 
 ---
 
