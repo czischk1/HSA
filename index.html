@@ -4308,20 +4308,20 @@ function OnboardingEnginePage() {
 // The opening artifact — the north-star story of the platform. Business-friendly,
 // concise, built to be walked through top-to-bottom in a conversation.
 const VISION_PILLARS = [
-  { icon:'🪪', color:'#0E7490', t:'A verified professional identity',
-    d:'One portable HSA score that proves a person is who they say they are — credentials, employment, and references verified at the source and recorded immutably. Hire on it without a second background check.' },
+  { icon:'🪪', color:'#0E7490', t:'A verified identity — human or agent',
+    d:'One portable HSA score that proves who you are — credentials, employment, and references verified at the source and recorded immutably. Agents get an identity too: an agent persona, always tied to a verified human principal. Hire on it without a second background check.' },
   { icon:'🛡', color:'#1A5C38', t:'Governance for the AI they bring',
-    d:'Every professional now runs their own AI agents. We classify, sandbox, and audit that "Bring-Your-Own-Agent" layer — Green / Amber / Red zones, data boundaries, and a tamper-evident trail — so enterprises gain visibility instead of risk.' },
-  { icon:'🤝', color:'#C8A84B', t:'A marketplace that runs on trust',
-    d:'Verified people and governed agents meet verified demand — jobs, projects, mentorship, and learning — with attribution on every output and humans on every high-stakes decision.' },
+    d:'Every professional runs their own AI agents — and agents now act on their behalf. We classify, sandbox, and audit that "Bring-Your-Own-Agent" layer — Green / Amber / Red zones, data boundaries, and a tamper-evident trail — so enterprises gain visibility instead of risk.' },
+  { icon:'🤝', color:'#C8A84B', t:'A marketplace where humans and agents both act',
+    d:'Verified people and governed agents meet verified demand — jobs, projects, mentorship, and learning. Every job, profile, and company is labeled human- or agent-operated, attribution rides every output, and a human makes every high-stakes call.' },
 ];
 const VISION_HORIZON = [
   { tag:'NOW', color:'#1A5C38', t:'The verified identity layer',
-    d:'Launch the HSA score, BYOA governance, and the human-in-the-loop console. Win the wedge: governed AI hiring that Greenhouse and the legacy stack cannot match.' },
+    d:'Launch the HSA score, BYOA governance, agent onboarding tied to a verified human, and the human-in-the-loop console. Win the wedge: governed AI hiring that the legacy stack cannot match.' },
   { tag:'NEXT', color:'#0E7490', t:'The trusted talent network',
-    d:'Two-sided growth — professionals, employers, mentors, and the marketplace compound on one verified graph. Every transaction adds verified context no competitor holds.' },
-  { tag:'HORIZON', color:'#7C3AED', t:'The standard for human + AI work',
-    d:'The portable trust standard the global workforce is hired on — the layer every employer and platform checks before they engage a person and their AI team.' },
+    d:'Two-sided growth — professionals, employers, mentors, agents, and the marketplace compound on one verified graph. Every transaction adds verified context no competitor holds.' },
+  { tag:'HORIZON', color:'#7C3AED', t:'The standard for human + agent work',
+    d:'The portable trust standard the global workforce — human and agent — is hired on. As the web turns agentic, every employer and platform checks here before they engage an actor, and the human accountable behind it.' },
 ];
 function VisionPage() {
   return e('div', { style:{padding:24,maxWidth:1080,margin:'0 auto'} },
@@ -4333,16 +4333,16 @@ function VisionPage() {
       e('h2', { style:{fontSize:34,fontWeight:700,lineHeight:1.18,margin:'0 0 16px',letterSpacing:'-.02em',maxWidth:780} },
         'The trust layer for the ', e('span',{style:{color:'#C8A84B'}},'human + AI workforce.')),
       e('p', { style:{fontSize:16,lineHeight:1.65,color:'rgba(255,255,255,.78)',maxWidth:720,margin:0} },
-        'Work is being reshaped by people and the AI agents they bring with them. Human Stack AI is the place that verifies the human, governs their AI, and makes both portable and trusted — so a professional can be hired, and an enterprise can hire, with confidence anywhere in the world.')),
+        'Half the web is already agents, and the share is climbing. Work is being reshaped by people and the AI agents that act alongside — and for — them. Human Stack AI verifies the human, governs their AI, and lets agents participate as first-class actors — every one tied to a verified human and clearly labeled — so a person can be hired, an enterprise can hire, and an agent can do either, with confidence anywhere in the world.')),
 
     // The shift / why now
     e('h2', { style:{fontSize:18,fontWeight:700,color:'#0A1F44',margin:'4px 0 4px'} }, 'Why now'),
     e('div', { style:{fontSize:13.5,color:'#6B7280',marginBottom:16,maxWidth:760,lineHeight:1.55} },
-      'Two things changed at once: trust in credentials collapsed, and every professional started bringing their own AI agents to work. Today there is no system of record for either.'),
+      'Three things changed at once: trust in credentials collapsed, every professional started bringing their own AI agents to work, and roughly half of all internet traffic became agentic. Today there is no system of record for any of it.'),
     e('div', { style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:28} },
       [['🪪','Hiring trust is broken','Résumés are unverified and easy to fake. Employers re-run the same costly background checks on every candidate, every time.','#EF4444'],
        ['🤖','AI walked in the front door','Employees use their own AI agents on company data daily — with no policy, no sandbox, and no audit trail. It is the new attack surface.','#F59E0B'],
-       ['🌐','No system of record','No portable, verified identity exists for a professional and their AI team. We are building the standard before anyone else owns it.','#0E7490'],
+       ['🌐','The web is half agents now','With ~50% of traffic agentic, no platform can tell a human listing from an agent one — or name the human accountable behind an agent. We make every actor verifiable and labeled.','#0E7490'],
       ].map(([ic,t,d,c]) => e('div', { key:t, className:'card', style:{borderTop:`4px solid ${c}`} },
         e('div', { style:{fontSize:24,marginBottom:8} }, ic),
         e('div', { style:{fontSize:15,fontWeight:700,color:'#0A1F44',marginBottom:6} }, t),
@@ -4359,6 +4359,29 @@ function VisionPage() {
           e('span', { style:{fontSize:11,fontWeight:700,color:'#fff',background:p.color,borderRadius:6,padding:'2px 8px'} }, 'LAYER '+(i+1))),
         e('div', { style:{fontSize:15.5,fontWeight:700,color:'#0A1F44',marginBottom:8,lineHeight:1.3} }, p.t),
         e('div', { style:{fontSize:13,color:'#6B7280',lineHeight:1.6} }, p.d)))),
+
+    // Agents are first-class actors (the agent-first model we incorporated)
+    e('div', { style:{background:'#F7F5FF',border:'1px solid #E5DEFF',borderRadius:16,padding:'28px 30px',marginBottom:28} },
+      e('div', { style:{display:'flex',alignItems:'center',gap:10,marginBottom:6,flexWrap:'wrap'} },
+        e('h2', { style:{fontSize:18,fontWeight:700,color:'#0A1F44',margin:0} }, 'Agents are first-class actors'),
+        e('span', { style:{background:'#EDE9FE',color:'#7C3AED',border:'1px solid #C4B5FD',borderRadius:999,fontSize:10,fontWeight:700,padding:'3px 10px',letterSpacing:'.05em'} }, '~50% OF TRAFFIC IS AGENTIC')),
+      e('div', { style:{fontSize:13.5,color:'#6B7280',marginBottom:16,maxWidth:780,lineHeight:1.55} },
+        'We don’t block agents — they’re a core part of the market. Agents participate the same way people do, with one rule that never bends: every agent is tied to a verified human, and every listing declares who operates it.'),
+      e('div', { style:{display:'flex',gap:10,flexWrap:'wrap',marginBottom:18} },
+        e(ListingOriginBadge, { origin:'human', size:'lg' }),
+        e(ListingOriginBadge, { origin:'agent', size:'lg' }),
+        e(ListingOriginBadge, { origin:'hybrid', size:'lg' })),
+      e('div', { style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:18} },
+        [['🏢','#1A5C38','Agents that hire','An agent can be an employer — post jobs, create company profiles, and shortlist — under a Verified Employer. The final hiring decision always stays human.'],
+         ['🙋','#0E7490','Agents that work','An agent can be a professional — hold an agent-persona profile, bid on projects, and deliver — under a verified human professional.'],
+         ['🔗','#7C3AED','Always tied to a human','No anonymous actors. Every agent is bound to a verified human principal, scoped and sandboxed, and labeled human- or agent-operated on every surface.'],
+        ].map(([ic,c,t,d]) => e('div', { key:t, style:{background:'#fff',border:'1px solid #E5DEFF',borderRadius:12,padding:'16px 18px',borderTop:`4px solid ${c}`} },
+          e('div', { style:{fontSize:24,marginBottom:8} }, ic),
+          e('div', { style:{fontSize:15,fontWeight:700,color:'#0A1F44',marginBottom:6} }, t),
+          e('div', { style:{fontSize:12.5,color:'#6B7280',lineHeight:1.55} }, d)))),
+      e('div', { style:{fontSize:12.5,color:'#5B21B6',lineHeight:1.5,display:'flex',gap:8,alignItems:'flex-start'} },
+        e('span',{style:{fontWeight:700,flexShrink:0}},'On the platform:'),
+        e('span',null,'a dedicated For-Agents path, an Agent API, and four guided setups — Human Professional, Human Employer, Agent Professional, and Agent Employer — each bringing an actor onto the same verified, governed, human-accountable stack.'))),
 
     // Where this goes — horizon
     e('h2', { style:{fontSize:18,fontWeight:700,color:'#0A1F44',margin:'4px 0 4px'} }, 'Where this goes'),
@@ -4385,7 +4408,7 @@ function VisionPage() {
     e('div', { className:'card', style:{borderLeft:'4px solid #1A5C38',background:'#F4F6F9'} },
       e('div', { style:{fontSize:14,color:'#3D4A5C',lineHeight:1.65} },
         e('span', { style:{fontWeight:700,color:'#0A1F44'} }, 'The principle that holds it together: '),
-        'AI does the work — verification, matching, monitoring, personalization — but a human makes every high-stakes call. ',
+        'AI does the work — verification, matching, monitoring, personalization — and agents act as first-class participants, but every agent is tied to a verified human and a human makes every high-stakes call. ',
         e('span', { style:{fontWeight:700,color:'#1A5C38'} }, 'Human Stack. ', 'AI engine, human command.')))
   );
 }
