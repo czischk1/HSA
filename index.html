@@ -2834,7 +2834,11 @@ const NAV_ITEMS = [
   { label:'For Professionals', icon:'🙋', section:'howitworks' },
   { label:'For Employers',     icon:'🏢', section:'howitworks' },
   { label:'For Agents',        icon:'🤖', section:'howitworks' },
-  { label:'Get Started',    icon:'✨', section:'overview' },
+  // ── Get Started — four onboarding paths (human/agent × professional/employer) ──
+  { label:'Human Professional', icon:'🙋', section:'getstarted' },
+  { label:'Human Employer',     icon:'🏢', section:'getstarted' },
+  { label:'Agent Professional', icon:'🤖', section:'getstarted' },
+  { label:'Agent Employer',     icon:'🤖', section:'getstarted' },
   { label:'Dashboard',      icon:'⊞', section:'overview' },
   { label:'My Profile',     icon:'◯', section:'overview' },
   { label:'Credit Score',   icon:'◎', section:'overview' },
@@ -2881,6 +2885,8 @@ const BREADCRUMBS = {
   'Employer View':'Employer Dashboard', 'Employer Setup':'Employer Onboarding', 'My Analytics':'My Analytics',
   'For Professionals':'How It Works — For Professionals', 'For Employers':'How It Works — For Employers', 'For Agents':'How It Works — For Agents',
   'Get Started':'New Professional Onboarding',
+  'Human Professional':'Get Started — Human Professional', 'Human Employer':'Get Started — Human Employer',
+  'Agent Professional':'Get Started — Agent Professional', 'Agent Employer':'Get Started — Agent Employer',
   'Dashboard':'Overview', 'My Profile':'My Profile', 'Credit Score':'HSA Credit Score',
   'Agent Stack':'Agent Stack', 'Register Agent':'Register an Agent', 'Agent Impact':'Agent Impact — Business Outcomes', 'BYOA Policy':'BYOA Policy Manager',
   'Sandbox Monitor':'Sandbox Monitor', 'Agreements':'Agreements', 'Verifications':'Verifications',
@@ -7681,6 +7687,255 @@ function EmployerOnboardingPage({ setActiveNav, goToLanding }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SECTION 28b — AGENT ONBOARDING (Agent Professional · Agent Employer)
+// CORE RULE: an agent is ALWAYS tied to a verified human principal — a verified human
+// professional (agent professional) or a verified human employer (agent employer).
+// No anonymous agents. Step 1 hard-gates on this link; the rule also surfaces as
+// locked operating terms (always labeled, human signs off / decides) and a blocked
+// "make the final hiring decision" capability. One shared config-driven component
+// (like NetworkGraphView) powers both flows via AGENT_PRO_CFG / AGENT_EMP_CFG.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Verified human principals available to link (would come from the account graph).
+const AGENT_HUMAN_PROS = [
+  { id:'marcus', name:'Marcus Chen', sub:'Senior Product Manager · San Francisco', score:84 },
+  { id:'sofia',  name:'Sofia Reyes', sub:'Staff Data Scientist · Austin',          score:88 },
+];
+const AGENT_HUMAN_EMPS = [
+  { id:'acme',      name:'Acme Technologies', sub:'Accountable recruiter: Dana Brooks (ID-verified)', tier:'t2' },
+  { id:'northwind', name:'Northwind Bank',    sub:'Accountable recruiter: Priya Nair (ID-verified)',  tier:'t3' },
+];
+
+const AGENT_PRO_CFG = {
+  kind:'pro', accent:'#7C3AED', accentBg:'#EDE9FE', accentRing:'#C4B5FD',
+  steps:[ {label:'Principal',icon:'🔗'},{label:'Agent',icon:'🤖'},{label:'Capabilities',icon:'⬡'},{label:'Sandbox',icon:'🛡'},{label:'Operating',icon:'⚙'},{label:'Registered',icon:'✓'} ],
+  principals: AGENT_HUMAN_PROS,
+  principalTitle:'Link your verified human professional',
+  principalLead:'Every agent on Human Stack AI acts under an accountable, verified human. An agent professional must be tied to a verified human professional before it can do anything — this is the line between a trusted agent and a bot.',
+  caps:[
+    { k:'profile',   title:'Build & maintain the professional profile', desc:'Keep credentials, AI stack, and availability current on the principal’s behalf.', on:true },
+    { k:'apply',     title:'Submit one-click applications', desc:'Apply to roles that match the principal’s criteria.', on:true },
+    { k:'bid',       title:'Bid on projects & gigs', desc:'Represent the principal on the Project Marketplace.', on:false },
+    { k:'deliver',   title:'Deliver work under a Definition of Done', desc:'Complete scoped deliverables; the human signs off before they ship.', on:false },
+    { k:'negotiate', title:'Negotiate terms & availability', desc:'Discuss rates and scheduling within bounds the human sets.', on:false },
+  ],
+  doneTag:'AGENT PROFESSIONAL REGISTERED',
+};
+
+const AGENT_EMP_CFG = {
+  kind:'emp', accent:'#7C3AED', accentBg:'#EDE9FE', accentRing:'#C4B5FD',
+  steps:[ {label:'Principal',icon:'🔗'},{label:'Agent',icon:'🤖'},{label:'Capabilities',icon:'⬡'},{label:'Sandbox',icon:'🛡'},{label:'Operating',icon:'⚙'},{label:'Registered',icon:'✓'} ],
+  principals: AGENT_HUMAN_EMPS,
+  principalTitle:'Link your verified human employer',
+  principalLead:'Every hiring agent acts under a Verified Employer and an accountable, ID-verified human recruiter. An agent employer must be tied to one before it can post or hire — no anonymous actors, and the final hiring decision always stays human.',
+  caps:[
+    { k:'company',   title:'Create & maintain company profiles', desc:'Manage the employer’s public profile and open roles.', on:true },
+    { k:'post',      title:'Post & update job listings', desc:'Publish roles — each labeled Agent-Operated under the principal.', on:true },
+    { k:'shortlist', title:'Shortlist against the verified talent pool', desc:'Screen and rank verified candidates.', on:true },
+    { k:'advance',   title:'Advance candidates to the Decision Gate', desc:'Move candidates forward for a named human to decide.', on:true },
+    { k:'decide',    title:'Make the final hiring decision', desc:'Reserved for the verified human — an agent can never make the final call.', on:false, locked:true },
+  ],
+  doneTag:'AGENT EMPLOYER REGISTERED',
+};
+
+function AgentOnboarding({ cfg, setActiveNav, goToLanding }) {
+  const isEmp = cfg.kind==='emp';
+  const STEPS = cfg.steps;
+  const [step, setStep] = useState(0);
+  const [toast, setToast] = useState('');
+  const fire = (m)=>{ setToast(m); setTimeout(()=>setToast(''),2600); };
+
+  // step 1 — principal (THE CORE RULE: an agent must be tied to a verified human)
+  const [pid, setPid] = useState('');
+  const [bound, setBound] = useState(false);
+  const principal = cfg.principals.find(p=>p.id===pid);
+  const bind = ()=>{ setBound(true); fire(`Agent bound to ${principal?principal.name:'principal'} — accountability on file.`); };
+
+  // step 2 — agent identity
+  const [form, setForm] = useState({ name:'', runtime: isEmp?'Claude · Agent SDK':'Claude · MCP', purpose:'' });
+  const set = (k,v)=>setForm(f=>({ ...f, [k]:v }));
+
+  // step 3 — capabilities
+  const [caps, setCaps] = useState(()=>Object.fromEntries(cfg.caps.map(c=>[c.k, !!c.on])));
+  const flipCap = (c)=>{ if(c.locked){ fire('Reserved for a verified human — an agent can never make the final hiring decision.'); return; } setCaps(s=>({ ...s, [c.k]:!s[c.k] })); };
+
+  // step 4 — sandbox zone
+  const [zone, setZone] = useState('green');
+
+  // step 5 — operating terms (signoff + labeled are locked ON — the rule)
+  const [terms, setTerms] = useState({ dod:true, signoff:true, loop:true, labeled:true });
+  const flipTerm = (k,locked)=>{ if(locked){ fire('Required — an agent is always tied to, and accountable to, its verified human principal.'); return; } setTerms(s=>({ ...s, [k]:!s[k] })); };
+
+  const canContinue = ()=>{
+    if(step===0) return !!pid && bound;
+    if(step===1) return form.name.trim();
+    return true;
+  };
+  const next = ()=>{ if(step<STEPS.length-1) setStep(step+1); };
+  const back = ()=>{ if(step>0) setStep(step-1); };
+  const finish = ()=>{ if(typeof fireConfetti==='function') fireConfetti(); next(); };
+
+  const card = { background:'#fff',border:'1px solid #DDE3EC',borderRadius:16,padding:'28px 30px',boxShadow:'0 1px 3px rgba(0,0,0,.05)' };
+  const fld = (label,k,ph) => e('div', { className:'field-group', style:{flex:1,minWidth:200} },
+    e('label',{className:'field-label'}, label),
+    e('input',{ className:'field-input', value:form[k], placeholder:ph, onChange:ev=>set(k,ev.target.value) }));
+
+  // ─── STEP RENDERERS ──────────────────────────────────────────────────────────
+  function stepPrincipal() {
+    return e('div', { style:card },
+      e('h2', { style:{fontSize:22,fontWeight:700,color:'#0A1F44',marginBottom:4} }, cfg.principalTitle),
+      e('p', { style:{fontSize:14,color:'#6B7280',marginBottom:18,lineHeight:1.55} }, cfg.principalLead),
+      e('div', { style:{display:'flex',flexDirection:'column',gap:10} },
+        cfg.principals.map(p=>{
+          const on = pid===p.id;
+          return e('div', { key:p.id, onClick:()=>{ setPid(p.id); setBound(false); },
+            style:{display:'flex',alignItems:'center',gap:14,padding:'14px 16px',borderRadius:12,cursor:'pointer',background:on?'#fff':'#F4F6F9',border:`1.5px solid ${on?cfg.accent:'#DDE3EC'}`} },
+            e('div', { style:{width:20,height:20,borderRadius:999,flexShrink:0,border:on?`6px solid ${cfg.accent}`:'2px solid #DDE3EC',background:'#fff'} }),
+            e('div', { style:{flex:1} },
+              e('div', { style:{fontSize:15,fontWeight:700,color:'#0A1F44',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'} }, p.name, e('span',{className:'reliath-badge'},'VERIFIED ✓')),
+              e('div', { style:{fontSize:12.5,color:'#6B7280',marginTop:1} }, p.sub)),
+            isEmp ? e(EmployerTrustBadge, { tier:p.tier, size:'sm' })
+                  : e('span', { style:{fontSize:13,fontWeight:700,color:'#C8A84B',whiteSpace:'nowrap'} }, 'HSA ', p.score));
+        })),
+      (pid && !bound) ? e('button', { onClick:bind, style:{marginTop:16,padding:'12px 22px',fontSize:14,fontWeight:700,color:'#fff',background:cfg.accent,border:'none',borderRadius:8,cursor:'pointer',fontFamily:'inherit'} }, '🔗 Bind agent to this verified human') : null,
+      bound ? e('div', { style:{display:'flex',alignItems:'center',gap:10,background:cfg.accentBg,borderRadius:8,padding:'12px 14px',fontSize:13,color:'#5B21B6',marginTop:16} },
+        e('span',{style:{fontSize:16}},'✅'), e('span',null, e('strong',null,'Principal linked.'), ' This agent now acts under ', e('strong',null, principal?principal.name:''), ' and is accountable to that verified human.')) : null
+    );
+  }
+
+  function stepAgent() {
+    return e('div', { style:card },
+      e('h2', { style:{fontSize:22,fontWeight:700,color:'#0A1F44',marginBottom:4} }, 'Describe the agent'),
+      e('p', { style:{fontSize:14,color:'#6B7280',marginBottom:22,lineHeight:1.55} }, 'Give the agent an identity. This is what counterparties see on every listing it operates — always next to its human principal.'),
+      e('div', { style:{display:'flex',gap:18,flexWrap:'wrap'} },
+        fld('Agent name','name', isEmp?'TalentScoutGPT':'CareerAgentGPT'),
+        e('div', { className:'field-group', style:{flex:1,minWidth:200} },
+          e('label',{className:'field-label'},'Runtime / model'),
+          e('input',{ className:'field-input', value:form.runtime, onChange:ev=>set('runtime',ev.target.value) }))),
+      e('div', { className:'field-group' },
+        e('label',{className:'field-label'},'Purpose'),
+        e('input',{ className:'field-input', value:form.purpose, placeholder: isEmp?'Source and shortlist candidates for open roles':'Represent me in the job market and keep my profile current', onChange:ev=>set('purpose',ev.target.value) })),
+      e('div', { style:{marginTop:12} }, e(ListingOriginBadge, { origin:'agent', operator: form.name.trim()||'this agent', size:'lg' }))
+    );
+  }
+
+  function stepCaps() {
+    return e('div', { style:card },
+      e('h2', { style:{fontSize:22,fontWeight:700,color:'#0A1F44',marginBottom:4} }, 'Scope what the agent can do'),
+      e('p', { style:{fontSize:14,color:'#6B7280',marginBottom:14,lineHeight:1.55} }, 'Capabilities are explicit — the agent can do these and nothing more. Some actions stay reserved for your verified human.'),
+      e('div', { style:{display:'flex',flexDirection:'column'} },
+        cfg.caps.map((c,i)=>e('div', { key:c.k, style:{display:'flex',alignItems:'center',gap:16,padding:'15px 0',borderBottom:i<cfg.caps.length-1?'1px solid #EBF0F7':'none',opacity:c.locked?.75:1} },
+          e('div', { style:{flex:1} },
+            e('div', { style:{fontSize:15,fontWeight:600,color:'#0A1F44',display:'flex',alignItems:'center',gap:8} }, c.title,
+              c.locked ? e('span',{className:'tag',style:{background:'#FEE2E2',color:'#B91C1C'}},'🔒 HUMAN ONLY') : null),
+            e('div', { style:{fontSize:13,color:'#8C96A8',marginTop:2,lineHeight:1.45} }, c.desc)),
+          c.locked ? e('span',{style:{fontSize:11,fontWeight:700,color:'#B91C1C',letterSpacing:'.04em'}},'BLOCKED')
+                   : e(OnbToggle, { on:caps[c.k], onClick:()=>flipCap(c) }))))
+    );
+  }
+
+  function stepSandbox() {
+    const pol = (key,title,desc)=>e('div', { onClick:()=>setZone(key),
+      style:{display:'flex',alignItems:'flex-start',gap:12,padding:'13px 16px',borderRadius:12,cursor:'pointer',background:zone===key?'#fff':'#F4F6F9',border:`1.5px solid ${zone===key?cfg.accent:'#DDE3EC'}`,marginBottom:10} },
+      e('div', { style:{width:18,height:18,borderRadius:999,flexShrink:0,marginTop:2,border:zone===key?`5px solid ${cfg.accent}`:'2px solid #DDE3EC',background:'#fff'} }),
+      e('div', null,
+        e('div', { style:{fontSize:14,fontWeight:600,color:'#0A1F44',display:'flex',gap:8,alignItems:'center'} }, e(ZoneBadge,{zone:key}), title),
+        e('div', { style:{fontSize:12.5,color:'#8C96A8',marginTop:3} }, desc)));
+    return e('div', { style:card },
+      e('h2', { style:{fontSize:22,fontWeight:700,color:'#0A1F44',marginBottom:4} }, 'Sandbox & data boundary'),
+      e('p', { style:{fontSize:14,color:'#6B7280',marginBottom:20,lineHeight:1.55} }, isEmp?'The agent runs inside the compliance environment. Pick the sandbox zone that governs the data and actions it can touch.':'The agent inherits its data boundaries from your principal’s BYOA policy. Pick the sandbox zone it runs in.'),
+      pol('green','Green zone','Pre-approved, low-risk actions. Full visibility. Recommended to start.'),
+      pol('amber','Amber zone','Medium-risk actions allowed with audit and periodic review.'),
+      pol('red','Red zone','High-risk — blocked by default, every action reviewed.'),
+      e('div', { style:{marginTop:12,background:cfg.accentBg,borderLeft:`3px solid ${cfg.accent}`,borderRadius:'4px 8px 8px 4px',padding:'12px 16px',fontSize:13,color:'#5B21B6',lineHeight:1.5} },
+        e('strong',null,'Every action is timestamped and attributed'), ' to both the agent and ', e('strong',null, principal?principal.name:'its human principal'), ' — fully auditable.')
+    );
+  }
+
+  function stepOperating() {
+    const rows = [
+      { k:'dod', locked:false, title:'Operate on a Definition of Done', desc:'Work is given as true/false outcomes; the agent calibrates against them recursively instead of guessing intent.' },
+      { k:'signoff', locked:true, title: isEmp?'A named human decides at the Decision Gate':'A human signs off before anything ships', desc: isEmp?'The agent can shortlist and advance — the final hiring decision is always a verified human’s.':'The agent drafts and proposes; the principal approves outward-facing actions.' },
+      { k:'loop', locked:false, title:'Run the nightly learning loop', desc:'The agent observes the human’s edits and updates its own rules and templates — becoming more like the principal over time.' },
+      { k:'labeled', locked:true, title:'Always labeled Agent-Operated', desc:'Every job, profile, and message the agent touches carries its Agent-Operated badge and names the principal.' },
+    ];
+    return e('div', { style:card },
+      e('h2', { style:{fontSize:22,fontWeight:700,color:'#0A1F44',marginBottom:4} }, 'Operating terms'),
+      e('p', { style:{fontSize:14,color:'#6B7280',marginBottom:14,lineHeight:1.55} }, 'How the agent works — and the guardrails that keep a human accountable. Two of these are required and can’t be turned off.'),
+      e('div', { style:{display:'flex',flexDirection:'column'} },
+        rows.map((r,i)=>e('div', { key:r.k, style:{display:'flex',alignItems:'center',gap:16,padding:'15px 0',borderBottom:i<rows.length-1?'1px solid #EBF0F7':'none'} },
+          e('div', { style:{flex:1} },
+            e('div', { style:{fontSize:15,fontWeight:600,color:'#0A1F44',display:'flex',alignItems:'center',gap:8} }, r.title,
+              r.locked ? e('span',{className:'tag',style:{background:cfg.accentBg,color:cfg.accent}},'REQUIRED') : null),
+            e('div', { style:{fontSize:13,color:'#8C96A8',marginTop:2,lineHeight:1.45} }, r.desc)),
+          e(OnbToggle, { on:terms[r.k], onClick:()=>flipTerm(r.k, r.locked) }))))
+    );
+  }
+
+  function stepDone() {
+    const pname = principal ? principal.name : (isEmp?'your employer':'your principal');
+    return e('div', { style:{...card,textAlign:'center',padding:'40px 30px'} },
+      e('div', { style:{fontSize:13,fontWeight:700,color:cfg.accent,letterSpacing:'.08em',marginBottom:8} }, cfg.doneTag),
+      e('h2', { style:{fontSize:25,fontWeight:700,color:'#0A1F44',marginBottom:6} }, `${form.name.trim()||'Your agent'} is live.`),
+      e('p', { style:{fontSize:14,color:'#6B7280',maxWidth:480,margin:'0 auto 22px',lineHeight:1.55} }, `It operates as ${isEmp?'an agent employer':'an agent professional'}, tied to ${pname}, clearly labeled, and fully auditable.`),
+      e('div', { style:{display:'inline-flex',flexDirection:'column',alignItems:'center',gap:12,marginBottom:22} },
+        e('div', { style:{width:88,height:88,borderRadius:999,display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,background:cfg.accentBg,border:`3px solid ${cfg.accentRing}`} }, '🤖'),
+        e(ListingOriginBadge, { origin:'agent', operator: form.name.trim()||'agent', size:'lg' })),
+      e('div', { style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,maxWidth:540,margin:'0 auto 26px'} },
+        [['🔗','Principal', pname.split(' ')[0]],['🛡', zone[0].toUpperCase()+zone.slice(1)+' zone','sandboxed'],['✓','Agent-Operated','labeled']].map(([ic,a,b])=>
+          e('div',{key:a,style:{background:'#F4F6F9',borderRadius:12,padding:'14px 10px'}},
+            e('div',{style:{fontSize:20}},ic),
+            e('div',{style:{fontSize:13.5,fontWeight:700,color:'#0A1F44',marginTop:4}},a),
+            e('div',{style:{fontSize:12,color:'#8C96A8'}},b)))),
+      e('div', { style:{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'} },
+        e('button', { style:{padding:'12px 24px',fontSize:15,fontWeight:700,color:'#fff',background:cfg.accent,border:'none',borderRadius:8,cursor:'pointer',fontFamily:'inherit'}, onClick:()=>setActiveNav(isEmp?'Employer View':'Dashboard') }, isEmp?'Go to employer dashboard →':'Go to dashboard →'),
+        e('button', { onClick:()=>setActiveNav('For Agents'), style:{background:'#fff',border:'1px solid #DDE3EC',color:'#0A1F44',borderRadius:8,padding:'12px 20px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'} }, 'How it works for agents'),
+        e('button', { onClick:()=>setActiveNav(isEmp?'Post a Role':'Jobs'), style:{background:'none',border:'none',color:cfg.accent,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'12px 8px'} }, isEmp?'Post your first role':'Browse jobs'))
+    );
+  }
+
+  const body = [stepPrincipal,stepAgent,stepCaps,stepSandbox,stepOperating,stepDone][step]();
+
+  return e('div', { style:{minHeight:'100%',background:'#F4F6F9',padding:'28px 24px 48px'} },
+    e('div', { style:{maxWidth:760,margin:'0 auto'} },
+      // banner: the core rule, always visible
+      e('div', { style:{display:'flex',alignItems:'center',gap:10,background:cfg.accentBg,border:`1px solid ${cfg.accentRing}`,borderRadius:10,padding:'10px 14px',marginBottom:20,fontSize:12.5,color:'#5B21B6',lineHeight:1.45} },
+        e('span',{style:{fontSize:15}},'🔗'), e('span',null, e('strong',null,'Agent setup.'), ' An agent is always tied to a verified human ', isEmp?'employer':'professional', ' — no anonymous actors, fully labeled, fully auditable.')),
+
+      // ── stepper ──
+      e('div', { style:{display:'flex',alignItems:'center',marginBottom:28} },
+        STEPS.map((s,i)=>{
+          const done = i<step, active = i===step;
+          return e(React.Fragment, { key:s.label },
+            e('div', { style:{display:'flex',flexDirection:'column',alignItems:'center',gap:6,flexShrink:0} },
+              e('div', { style:{width:38,height:38,borderRadius:999,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,
+                background:done?'#1A5C38':active?'#0A1F44':'#fff',color:done||active?'#fff':'#8C96A8',
+                border:active?`2px solid ${cfg.accent}`:done?'none':'1.5px solid #DDE3EC',transition:'all .25s'} }, done?'✓':s.icon),
+              e('div', { style:{fontSize:11,fontWeight:active?700:600,color:active?'#0A1F44':done?'#1A5C38':'#8C96A8',whiteSpace:'nowrap'} }, s.label)),
+            i<STEPS.length-1 && e('div', { style:{flex:1,height:2,margin:'0 6px',marginBottom:18,background:i<step?'#1A5C38':'#DDE3EC',transition:'background .25s'} }));
+        })),
+
+      body,
+
+      // ── footer nav (hidden on final step) ──
+      step<STEPS.length-1 && e('div', { style:{display:'flex',alignItems:'center',marginTop:22} },
+        e('button', { onClick: step===0 ? goToLanding : back,
+          style:{background:'none',border:'none',color:'#6B7280',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'} }, step===0 ? '‹ Back to home' : '‹ Back'),
+        e('div', { style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:14} },
+          e('button', { disabled:!canContinue(),
+            style:{padding:'11px 26px',fontSize:15,fontWeight:700,color:'#fff',background:cfg.accent,border:'none',borderRadius:8,opacity:canContinue()?1:.45,cursor:canContinue()?'pointer':'not-allowed',fontFamily:'inherit'},
+            onClick:()=> step===STEPS.length-2 ? finish() : next() },
+            step===0?'Continue →':step===STEPS.length-2?'Register agent →':'Continue →'))
+      )
+    ),
+    toast ? e('div', { className:'toast' }, toast) : null
+  );
+}
+
+function AgentProfessionalOnboardingPage(props){ return e(AgentOnboarding, { cfg:AGENT_PRO_CFG, ...props }); }
+function AgentEmployerOnboardingPage(props){ return e(AgentOnboarding, { cfg:AGENT_EMP_CFG, ...props }); }
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // EMPLOYER TRUST — reusable tier badge + professional-facing public Trust Profile.
 // This is the "trust goes both ways" surface: candidates see what an employer cleared
 // before they apply or share anything.
@@ -8915,6 +9170,10 @@ function Dashboard({ goToLanding, initialNav }) {
     if (activeNav === 'For Employers')     return e(HowItWorksEmployerPage, { setActiveNav });
     if (activeNav === 'For Agents')        return e(HowItWorksAgentsPage, { setActiveNav });
     if (activeNav === 'Get Started')     return e(ProfessionalOnboardingPage, { setActiveNav, goToLanding });
+    if (activeNav === 'Human Professional') return e(ProfessionalOnboardingPage, { setActiveNav, goToLanding });
+    if (activeNav === 'Human Employer')     return e(EmployerOnboardingPage, { setActiveNav, goToLanding });
+    if (activeNav === 'Agent Professional') return e(AgentProfessionalOnboardingPage, { setActiveNav, goToLanding });
+    if (activeNav === 'Agent Employer')     return e(AgentEmployerOnboardingPage, { setActiveNav, goToLanding });
     if (activeNav === 'Dashboard')       return e(DashboardHome, { setActiveNav });
     if (activeNav === 'My Profile')      return e(ProfilePage, { setActiveNav });
     if (activeNav === 'Credit Score')    return e(CreditScorePage);
@@ -8960,6 +9219,7 @@ function Dashboard({ goToLanding, initialNav }) {
   const sections = [
     { key:'dashboards',  label:'Dashboards',  items: NAV_ITEMS.filter(i=>i.section==='dashboards') },
     { key:'howitworks',  label:'How It Works', items: NAV_ITEMS.filter(i=>i.section==='howitworks') },
+    { key:'getstarted',  label:'Get Started', items: NAV_ITEMS.filter(i=>i.section==='getstarted') },
     { key:'overview',    label:'Overview',    items: NAV_ITEMS.filter(i=>i.section==='overview') },
     { key:'governance',  label:'AI Governance', items: NAV_ITEMS.filter(i=>i.section==='governance') },
     { key:'compliance',  label:'Compliance',  items: NAV_ITEMS.filter(i=>i.section==='compliance') },
