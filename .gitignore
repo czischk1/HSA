@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# local scratch / syntax-check helpers
+_check.cjs
+_checkgit.cjs
+_tmp_check.mjs

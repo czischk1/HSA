@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-navy: #0A1F44;
+  --color-green: #1A5C38;
+  --color-gold: #C8A84B;
+  --color-steel: #2E6DA4;
+  --color-amber: #E67E22;
+  --color-red: #C0392B;
+  --color-silver: #F4F6F9;
+  --color-silver2: #EBF0F7;
+  --color-dark: #3D4A5C;
+  --color-mid: #8C96A8;
+  --color-rule: #DDE3EC;
+  --color-white: #FFFFFF;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --space-12: 64px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--color-dark);
+  background: var(--color-white);
+  margin: 0;
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes barFill {
+  from { width: 0%; }
+}
+
+@keyframes badgeDrop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spinPending {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dotGrid {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.35; }
+}
+
+.animate-count-up {
+  animation: countUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-badge-drop {
+  animation: badgeDrop 0.4s ease-out forwards;
+}
+
+.animate-bar {
+  animation: barFill 0.8s ease-out forwards;
+}
+
+.animate-spin-pending {
+  animation: spinPending 1s linear infinite;
+}
