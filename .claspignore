@@ -1,0 +1,6 @@
+# Push ONLY the Apps Script files. Ignore everything else (Vite configs,
+# src/*.tsx, package.json, etc. would otherwise be uploaded incorrectly).
+**/**
+!index.html
+!Code.gs
+!appsscript.json

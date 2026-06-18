@@ -7,3 +7,7 @@ dist
 _check.cjs
 _checkgit.cjs
 _tmp_check.mjs
+
+# clasp (Apps Script CLI) — local project/auth state
+.clasp.json
+.clasprc.json
